@@ -2,6 +2,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { config } from "../lib/config/env.js";
 import { handleTelegramUpdate } from "../lib/handlers/commandHandler.js";
+import { handleSpecialUpdate } from "../lib/handlers/specialCommandHandler.js";
 
 function verifyWebhookSecret(receivedSecret) {
   if (typeof receivedSecret !== "string") {
@@ -30,10 +31,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    await handleTelegramUpdate(req.body);
+    const handled = await handleSpecialUpdate(req.body);
+
+    if (!handled) {
+      await handleTelegramUpdate(req.body);
+    }
+
     return res.status(200).json({ ok: true });
-  } catch {
-    console.error("Telegram webhook processing failed");
+  } catch (error) {
+    console.error("Telegram webhook processing failed:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
